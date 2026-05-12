@@ -8,14 +8,17 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
+      scope: "/ff/",
+      base: "/ff/",
       includeAssets: ["favicon.ico", "icon-192.png", "icon-512.png"],
       manifest: {
         name: "FitnessFirst Session Tracker",
         short_name: "FitnessFirst",
         description: "Track your FitnessFirst coaching sessions",
-        theme_color: "#1e40af",
-        background_color: "#f1f5f9",
+        theme_color: "#000000",
+        background_color: "#f5f5f5",
         display: "standalone",
+        scope: "/ff/",
         start_url: "/ff/",
         icons: [
           { src: "/ff/icon-192.png", sizes: "192x192", type: "image/png" },
