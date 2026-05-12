@@ -43,8 +43,6 @@ jobs:
           script: |
             mkdir -p ~/ff-session-tracker
             cd ~/ff-session-tracker
-
-            # Write docker-compose.yml
             cat > docker-compose.yml << 'EOF'
             version: "3.8"
             services:
@@ -56,27 +54,18 @@ jobs:
                 volumes:
                   - ./data:/app/data
             EOF
-
             docker compose pull
             docker compose down --remove-orphans
             docker compose up -d
             docker image prune -f
 
             # Configure nginx reverse proxy for /ff
-            cat > /etc/nginx/conf.d/ff-session-tracker.conf << 'NGINX'
-            location /ff/ {
-                proxy_pass http://127.0.0.1:3002/;
-                proxy_http_version 1.1;
-                proxy_set_header Upgrade $http_upgrade;
-                proxy_set_header Connection 'upgrade';
-                proxy_set_header Host $host;
-                proxy_cache_bypass $http_upgrade;
-                proxy_set_header X-Real-IP $remote_addr;
-                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $scheme;
-            }
-            NGINX
-
+            if ! grep -rq "location /ff/" /etc/nginx/ 2>/dev/null; then
+              NGINX_FILE=$(grep -rl "location /nina" /etc/nginx/sites-enabled/ /etc/nginx/conf.d/ 2>/dev/null | head -1)
+              if [ -n "$NGINX_FILE" ]; then
+                awk '/location \/nina/{print "    location /ff/ {"; print "        proxy_pass http://127.0.0.1:3002/;"; print "        proxy_http_version 1.1;"; print "        proxy_set_header Upgrade $http_upgrade;"; print "        proxy_set_header Connection '"'"'upgrade'"'"';"; print "        proxy_set_header Host $host;"; print "        proxy_set_header X-Real-IP $remote_addr;"; print "        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;"; print "        proxy_set_header X-Forwarded-Proto $scheme;"; print "    }"; print ""} {print}' "$NGINX_FILE" > /tmp/nginx-new.conf && mv /tmp/nginx-new.conf "$NGINX_FILE"
+                echo "nginx config updated"
+              fi
+            fi
             nginx -t && systemctl reload nginx
-
-            echo "✅ Deployed successfully!"
+            echo "Deployed successfully!"
