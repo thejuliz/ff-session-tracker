@@ -58,7 +58,7 @@ export default function Sessions() {
                   <p className="text-xs text-slate-400 mt-1">{s.notes}</p>
                 )}
                 {s.package_name && (
-                  <p className="text-xs text-blue-500 mt-1">
+                  <p className="text-xs text-[#c8102e] mt-1">
                     📦 {s.package_name}
                   </p>
                 )}

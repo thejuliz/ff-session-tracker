@@ -43,8 +43,8 @@ export default function Dashboard() {
       {
         label: "จำนวนเซสชัน",
         data: stats.weekly_data.map((w) => w.count),
-        backgroundColor: "rgba(59, 130, 246, 0.6)",
-        borderRadius: 4,
+        backgroundColor: "rgba(200, 16, 46, 0.7)",
+        borderRadius: 0,
       },
     ],
   };
@@ -66,22 +66,22 @@ export default function Dashboard() {
     <div className="space-y-4">
       {/* Active Package Card */}
       {stats.active_package && (
-        <div className="card bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-          <h2 className="text-lg font-bold text-blue-800">📦 แพ็กเกจปัจจุบัน</h2>
-          <p className="text-sm text-blue-600">{stats.active_package.name}</p>
+        <div className="card bg-gradient-to-br from-red-50 to-rose-50 border-[#c8102e]">
+          <h2 className="text-lg font-bold text-[#c8102e]">📦 แพ็กเกจปัจจุบัน</h2>
+          <p className="text-sm text-red-700">{stats.active_package.name}</p>
           <div className="mt-3">
             <div className="flex justify-between text-sm mb-1">
               <span>
                 ใช้ไป {stats.active_package.used_sessions}/
                 {stats.active_package.total_sessions}
               </span>
-              <span className="font-bold text-blue-700">
+              <span className="font-bold text-[#c8102e]">
                 เหลือ {stats.active_package.remaining}
               </span>
             </div>
-            <div className="w-full bg-blue-200 rounded-full h-3">
+            <div className="w-full bg-gray-200 h-3">
               <div
-                className="bg-blue-600 h-3 rounded-full transition-all"
+                className="bg-[#c8102e] h-3 transition-all"
                 style={{
                   width: `${
                     (stats.active_package.remaining /
@@ -109,7 +109,7 @@ export default function Dashboard() {
       {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-3">
         <div className="card text-center">
-          <p className="text-2xl font-bold text-blue-600">
+          <p className="text-2xl font-bold text-[#c8102e]">
             {stats.total_sessions}
           </p>
           <p className="text-xs text-slate-500">ทั้งหมด</p>
@@ -146,13 +146,13 @@ export default function Dashboard() {
           {calendarDays.map((day, i) => (
             <div
               key={i}
-              className={`py-2 rounded-lg text-sm ${
+              className={`py-2 text-sm ${
                 day.isCurrentMonth ? "" : "text-slate-300"
               } ${
                 day.hasSession
-                  ? "bg-blue-500 text-white font-bold"
+                  ? "bg-[#c8102e] text-white font-bold"
                   : day.isToday
-                  ? "bg-blue-100 text-blue-700 font-bold"
+                  ? "bg-red-100 text-[#c8102e] font-bold"
                   : ""
               }`}
             >

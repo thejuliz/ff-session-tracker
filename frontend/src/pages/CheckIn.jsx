@@ -46,8 +46,8 @@ export default function CheckIn() {
     <div className="space-y-4">
       {/* Package Status */}
       {stats?.active_package && (
-        <div className="card bg-blue-50 border-blue-200">
-          <p className="text-sm text-blue-700">
+        <div className="card bg-red-50 border-[#c8102e]">
+          <p className="text-sm text-[#c8102e]">
             📦 <strong>{stats.active_package.name}</strong> — เหลือ{" "}
             {stats.active_package.remaining} เซสชัน
           </p>
@@ -70,8 +70,8 @@ export default function CheckIn() {
 
       {/* Success Message */}
       {success && (
-        <div className="card bg-green-50 border-green-200 text-center">
-          <p className="text-lg font-bold text-green-700">✅ เช็คอินสำเร็จ!</p>
+        <div className="card border-green-500 text-center">
+          <p className="text-lg font-bold text-green-600">✅ เช็คอินสำเร็จ!</p>
         </div>
       )}
 
@@ -83,7 +83,7 @@ export default function CheckIn() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full btn-primary text-lg py-4 bg-green-600 hover:bg-green-700"
+          className="w-full btn-primary text-lg py-4"
         >
           {submitting ? "กำลังบันทึก..." : "🏋️ เช็คอินเลย!"}
         </button>
@@ -99,7 +99,7 @@ export default function CheckIn() {
             type="datetime-local"
             value={sessionDate}
             onChange={(e) => setSessionDate(e.target.value)}
-            className="w-full border border-slate-300 rounded-lg px-3 py-2"
+            className="w-full border border-slate-300 px-3 py-2"
           />
         </div>
 
@@ -113,7 +113,7 @@ export default function CheckIn() {
             value={coachName}
             onChange={(e) => setCoachName(e.target.value)}
             placeholder="ชื่อโค้ช..."
-            className="w-full border border-slate-300 rounded-lg px-3 py-2"
+            className="w-full border border-slate-300 px-3 py-2"
           />
         </div>
 
@@ -127,7 +127,7 @@ export default function CheckIn() {
             onChange={(e) => setNotes(e.target.value)}
             placeholder="เช่น Chest & Triceps, Body weight..."
             rows={2}
-            className="w-full border border-slate-300 rounded-lg px-3 py-2"
+            className="w-full border border-slate-300 px-3 py-2"
           />
         </div>
       </form>

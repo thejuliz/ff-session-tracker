@@ -69,7 +69,7 @@ export default function Packages() {
                 setFormData({ ...formData, name: e.target.value })
               }
               placeholder="เช่น 50 Sessions"
-              className="w-full border border-slate-300 rounded-lg px-3 py-2"
+              className="w-full border border-slate-300 px-3 py-2"
               required
             />
           </div>
@@ -83,7 +83,7 @@ export default function Packages() {
                 setFormData({ ...formData, total_sessions: e.target.value })
               }
               placeholder="50"
-              className="w-full border border-slate-300 rounded-lg px-3 py-2"
+              className="w-full border border-slate-300 px-3 py-2"
               min="1"
               required
             />
@@ -98,7 +98,7 @@ export default function Packages() {
                 onChange={(e) =>
                   setFormData({ ...formData, purchased_at: e.target.value })
                 }
-                className="w-full border border-slate-300 rounded-lg px-3 py-2"
+                className="w-full border border-slate-300 px-3 py-2"
                 required
               />
             </div>
@@ -110,7 +110,7 @@ export default function Packages() {
                 onChange={(e) =>
                   setFormData({ ...formData, expires_at: e.target.value })
                 }
-                className="w-full border border-slate-300 rounded-lg px-3 py-2"
+                className="w-full border border-slate-300 px-3 py-2"
                 required
               />
             </div>
@@ -126,11 +126,11 @@ export default function Packages() {
       <div className="space-y-3">
         {packages.map((pkg) => {
           const statusColor = pkg.isExpired
-            ? "border-red-300 bg-red-50"
+            ? "border-[#c8102e] bg-red-50"
             : pkg.isAlmostEmpty
-            ? "border-amber-300 bg-amber-50"
+            ? "border-amber-500 bg-amber-50"
             : pkg.isActive
-            ? "border-green-300 bg-green-50"
+            ? "border-green-500 bg-green-50"
             : "border-slate-200";
 
           const statusBadge = pkg.isExpired
@@ -163,9 +163,9 @@ export default function Packages() {
                   </span>
                   <span className="font-bold">เหลือ {pkg.remaining}</span>
                 </div>
-                <div className="w-full bg-white/50 rounded-full h-2.5">
+                <div className="w-full bg-gray-200 h-2.5">
                   <div
-                    className={`h-2.5 rounded-full transition-all ${
+                    className={`h-2.5 transition-all ${
                       pkg.isExpired
                         ? "bg-red-400"
                         : pkg.isAlmostEmpty
