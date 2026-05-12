@@ -14,6 +14,7 @@ export default defineConfig({
       manifest: {
         name: "FitnessFirst Session Tracker",
         short_name: "FitnessFirst",
+        id: "/ff/",
         description: "Track your FitnessFirst coaching sessions",
         theme_color: "#000000",
         background_color: "#f5f5f5",
