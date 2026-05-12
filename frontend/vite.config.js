@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "icon-192.png", "icon-512.png"],
       manifest: {
-        name: "FF Session Tracker",
-        short_name: "FF Tracker",
+        name: "FitnessFirst Session Tracker",
+        short_name: "FitnessFirst",
         description: "Track your FitnessFirst coaching sessions",
         theme_color: "#1e40af",
         background_color: "#f1f5f9",

@@ -17,7 +17,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-100 pb-20">
       <header className="bg-blue-700 text-white p-4 sticky top-0 z-10 shadow-lg">
-        <h1 className="text-xl font-bold text-center">💪 FF Session Tracker</h1>
+        <h1 className="text-xl font-bold text-center">💪 FitnessFirst Session Tracker</h1>
       </header>
 
       <main className="max-w-lg mx-auto p-4">
