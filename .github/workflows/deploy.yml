@@ -68,5 +68,5 @@ jobs:
                 echo "nginx config updated"
               fi
             fi
-            nginx -t && systemctl reload nginx
+            nginx -t && nginx -s reload
             echo "Deployed successfully!"
