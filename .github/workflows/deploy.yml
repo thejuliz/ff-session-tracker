@@ -1,0 +1,65 @@
+name: Build & Deploy to DigitalOcean
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+
+      - name: Deploy to DigitalOcean
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          port: ${{ secrets.DO_PORT || 22 }}
+          script: |
+            mkdir -p ~/ff-session-tracker
+            cd ~/ff-session-tracker
+
+            # Write docker-compose.yml
+            cat > docker-compose.yml << 'EOF'
+            version: "3.8"
+            services:
+              ff-session-tracker:
+                image: ghcr.io/${{ github.repository }}:latest
+                restart: unless-stopped
+                ports:
+                  - "3002:3001"
+                volumes:
+                  - ./data:/app/data
+            EOF
+
+            docker compose pull
+            docker compose down --remove-orphans
+            docker compose up -d
+            docker image prune -f
+
+            echo "✅ Deployed successfully!"

@@ -1,0 +1,9 @@
+version: "3.8"
+services:
+  ff-session-tracker:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3002:3001"
+    volumes:
+      - ./data:/app/data
