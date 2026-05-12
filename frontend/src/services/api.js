@@ -1,4 +1,6 @@
-const API_BASE = "/api";
+// API base respects Vite's base config (/ff/ in production, / in dev)
+const BASE_URL = import.meta.env.BASE_URL || "/";
+const API_BASE = `${BASE_URL}api`;
 
 async function request(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
