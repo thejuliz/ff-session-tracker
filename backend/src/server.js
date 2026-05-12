@@ -18,11 +18,19 @@ app.get("/api/health", (_req, res) => {
 });
 
 // Serve built frontend static files (production only — when dist exists)
-const frontendDist = path.join(__dirname, "../frontend/dist");
+// Docker: __dirname = /app/src → ../frontend/dist = /app/frontend/dist
+// Local:  __dirname = backend/src → ../../frontend/dist = project/frontend/dist
+const frontendDist = fs.existsSync(path.join(__dirname, "../frontend/dist"))
+  ? path.join(__dirname, "../frontend/dist")
+  : path.join(__dirname, "../../frontend/dist");
+
 if (fs.existsSync(frontendDist)) {
+  // Serve at both /ff/ (raw proxy) and / (stripped prefix)
+  app.use("/ff", express.static(frontendDist));
   app.use(express.static(frontendDist));
-  // SPA fallback
-  app.get("*", (_req, res) => {
+
+  // SPA fallback for both prefixes
+  app.get(["/ff", "/ff/*", "*"], (_req, res) => {
     res.sendFile(path.join(frontendDist, "index.html"));
   });
 }
