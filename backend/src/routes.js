@@ -204,6 +204,9 @@ router.get("/stats", (_req, res) => {
   // Weekly data: last 12 weeks
   const weeklyData = computeWeeklyData(db);
 
+  // Predicted session dates: next Tue (2) / Thu (4) until remaining runs out or package expires
+  const predictedDates = computePredictedDates(db, activePackage);
+
   res.json({
     active_package: activePackage
       ? {
@@ -216,6 +219,7 @@ router.get("/stats", (_req, res) => {
     current_streak: streak,
     calendar_data: calendarData,
     weekly_data: weeklyData,
+    predicted_dates: predictedDates,
   });
 });
 
@@ -299,6 +303,29 @@ function computeWeeklyData(db) {
     });
   }
   return weeks;
+}
+
+function computePredictedDates(db, activePackage) {
+  if (!activePackage) return [];
+
+  const remaining = activePackage.total_sessions - activePackage.used_sessions;
+  if (remaining <= 0) return [];
+
+  const expiresAt = new Date(activePackage.expires_at);
+  const sessionDays = [2, 4]; // Tuesday, Thursday
+
+  const dates = [];
+  let d = new Date();
+  // Start from today — find the next Tue or Thu
+  while (dates.length < remaining && d <= expiresAt) {
+    const dow = d.getDay();
+    if (sessionDays.includes(dow) && d >= new Date(new Date().toDateString())) {
+      dates.push(d.toISOString().split("T")[0]);
+    }
+    d.setDate(d.getDate() + 1);
+  }
+
+  return dates;
 }
 
 export default router;

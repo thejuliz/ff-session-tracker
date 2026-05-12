@@ -59,8 +59,8 @@ export default function Dashboard() {
     },
   };
 
-  // Calendar: build a simple month view
-  const calendarDays = buildCalendarDays(stats.calendar_data);
+  // Calendar: build a simple month view with predicted dates
+  const calendarDays = buildCalendarDays(stats.calendar_data, stats.predicted_dates || []);
 
   return (
     <div className="space-y-4">
@@ -103,6 +103,29 @@ export default function Dashboard() {
               }
             )}
           </p>
+        </div>
+      )}
+
+      {/* Predicted Last Session */}
+      {stats.predicted_dates && stats.predicted_dates.length > 0 && (
+        <div className="card border-l-4 border-l-[#c8102e]">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">📅</span>
+            <div>
+              <h2 className="text-sm font-bold text-slate-700">
+                เซสชันสุดท้ายโดยประมาณ
+              </h2>
+              <p className="text-lg font-bold text-[#c8102e]">
+                {new Date(stats.predicted_dates[stats.predicted_dates.length - 1]).toLocaleDateString(
+                  "th-TH",
+                  { weekday: "short", day: "numeric", month: "short", year: "2-digit" }
+                )}
+              </p>
+              <p className="text-xs text-slate-400 mt-1">
+                อังคาร/พฤหัส • เหลือ {stats.predicted_dates.length} เซสชัน
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
@@ -151,6 +174,8 @@ export default function Dashboard() {
               } ${
                 day.hasSession
                   ? "bg-[#c8102e] text-white font-bold"
+                  : day.isPredicted
+                  ? "border-2 border-dashed border-[#c8102e]/40 text-[#c8102e] font-semibold"
                   : day.isToday
                   ? "bg-red-100 text-[#c8102e] font-bold"
                   : ""
@@ -161,6 +186,9 @@ export default function Dashboard() {
                 <span className="block text-[8px] opacity-80">
                   {day.sessionCount}
                 </span>
+              )}
+              {day.isPredicted && !day.hasSession && (
+                <span className="block text-[8px] opacity-60">~</span>
               )}
             </div>
           ))}
@@ -203,7 +231,7 @@ export default function Dashboard() {
   );
 }
 
-function buildCalendarDays(calendarData) {
+function buildCalendarDays(calendarData, predictedDates = []) {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth();
@@ -211,6 +239,9 @@ function buildCalendarDays(calendarData) {
   // Map calendar data for quick lookup
   const sessionMap = new Map();
   calendarData.forEach((d) => sessionMap.set(d.date, d.count));
+
+  // Map predicted dates
+  const predictedSet = new Set(predictedDates);
 
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
@@ -231,6 +262,7 @@ function buildCalendarDays(calendarData) {
       hasSession: false,
       isToday: false,
       sessionCount: 0,
+      isPredicted: false,
     });
   }
 
@@ -244,6 +276,7 @@ function buildCalendarDays(calendarData) {
       hasSession: count > 0,
       isToday: dateStr === today,
       sessionCount: count,
+      isPredicted: predictedSet.has(dateStr),
     });
   }
 
@@ -256,6 +289,7 @@ function buildCalendarDays(calendarData) {
       hasSession: false,
       isToday: false,
       sessionCount: 0,
+      isPredicted: false,
     });
   }
 
