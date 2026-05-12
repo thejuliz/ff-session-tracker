@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";
 import routes from "./routes.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -12,18 +13,19 @@ app.use(cors());
 app.use(express.json());
 app.use("/api", routes);
 
-// Serve built frontend static files (production)
-const frontendDist = path.join(__dirname, "../frontend/dist");
-app.use(express.static(frontendDist));
-
-// SPA fallback — all non-API routes serve index.html
-app.get("*", (_req, res) => {
-  res.sendFile(path.join(frontendDist, "index.html"));
-});
-
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
 });
+
+// Serve built frontend static files (production only — when dist exists)
+const frontendDist = path.join(__dirname, "../frontend/dist");
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  // SPA fallback
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(frontendDist, "index.html"));
+  });
+}
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Backend running on port ${PORT}`);
