@@ -60,6 +60,7 @@ jobs:
             docker image prune -f
 
             # Configure nginx reverse proxy for /ff
+            rm -f /etc/nginx/conf.d/ff-session-tracker.conf
             if ! grep -rq "location /ff/" /etc/nginx/ 2>/dev/null; then
               NGINX_FILE=$(grep -rl "location /nina" /etc/nginx/sites-enabled/ /etc/nginx/conf.d/ 2>/dev/null | head -1)
               if [ -n "$NGINX_FILE" ]; then
