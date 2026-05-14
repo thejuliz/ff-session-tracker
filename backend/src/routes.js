@@ -156,9 +156,15 @@ router.put("/sessions/:id", (req, res) => {
 // STATS / DASHBOARD
 // ──────────────────────────────────────────────
 
-router.get("/stats", (_req, res) => {
+router.get("/stats", (req, res) => {
+  const timezoneOffsetMinutes = parseTimezoneOffsetMinutes(
+    req.query.timezone_offset_minutes
+  );
   const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const startOfMonth = getLocalMonthStartUtc(
+    now,
+    timezoneOffsetMinutes
+  ).toISOString();
 
   // Active package info (FIFO)
   const activePackage = db
@@ -189,23 +195,28 @@ router.get("/stats", (_req, res) => {
     .get().count;
 
   // Current streak (consecutive weeks with at least 1 session)
-  const streak = computeStreak(db);
+  const streak = computeStreak(db, now, timezoneOffsetMinutes);
 
   // Calendar data: sessions grouped by date (YYYY-MM-DD)
+  const timezoneModifier = sqliteTimezoneModifier(timezoneOffsetMinutes);
   const calendarData = db
     .prepare(
-      `SELECT date(session_date) as date, COUNT(*) as count, SUM(1) as sessions
+      `SELECT date(session_date, ?) as date, COUNT(*) as count, SUM(1) as sessions
        FROM sessions
-       GROUP BY date(session_date)
+       GROUP BY date(session_date, ?)
        ORDER BY date ASC`
     )
-    .all();
+    .all(timezoneModifier, timezoneModifier);
 
   // Weekly data: last 12 weeks
-  const weeklyData = computeWeeklyData(db);
+  const weeklyData = computeWeeklyData(db, timezoneOffsetMinutes);
 
   // Predicted session dates: next Tue (2) / Thu (4) until remaining runs out or package expires
-  const predictedDates = computePredictedDates(db, activePackage);
+  const predictedDates = computePredictedDates(
+    db,
+    activePackage,
+    timezoneOffsetMinutes
+  );
 
   res.json({
     active_package: activePackage
@@ -223,23 +234,28 @@ router.get("/stats", (_req, res) => {
   });
 });
 
-function computeStreak(db) {
-  // Get distinct weeks (ISO week) that have sessions, most recent first
+function computeStreak(db, now = new Date(), timezoneOffsetMinutes = 0) {
+  const timezoneModifier = sqliteTimezoneModifier(timezoneOffsetMinutes);
+
+  // Get distinct weeks that have sessions in the user's local timezone, most recent first
   const weeks = db
     .prepare(
-      `SELECT DISTINCT strftime('%Y-%W', session_date) as week
+      `SELECT DISTINCT strftime('%Y-%W', session_date, ?) as week
        FROM sessions
        ORDER BY week DESC`
     )
-    .all()
+    .all(timezoneModifier)
     .map((r) => r.week);
 
   if (weeks.length === 0) return 0;
 
   // Check if current week has a session
-  const currentWeek = strftimeWeek(new Date());
+  const currentWeek = strftimeWeek(toLocalDate(now, timezoneOffsetMinutes));
   const lastWeek = strftimeWeek(
-    new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    new Date(
+      toLocalDate(now, timezoneOffsetMinutes).getTime() -
+        7 * 24 * 60 * 60 * 1000
+    )
   );
 
   let streak = 0;
@@ -255,7 +271,7 @@ function computeStreak(db) {
     streak++;
     // Go back one week
     const d = parseWeek(checkWeek);
-    d.setDate(d.getDate() - 7);
+    d.setUTCDate(d.getUTCDate() - 7);
     checkWeek = strftimeWeek(d);
   }
 
@@ -265,27 +281,38 @@ function computeStreak(db) {
 function strftimeWeek(date) {
   // Return YYYY-WW format for a given date
   const d = new Date(date);
+  const yearStart = Date.UTC(d.getUTCFullYear(), 0, 1);
   const dayOfYear = Math.floor(
-    (d - new Date(d.getFullYear(), 0, 1)) / (24 * 60 * 60 * 1000)
+    (d.getTime() - yearStart) / (24 * 60 * 60 * 1000)
   );
   const week = Math.floor(dayOfYear / 7);
-  return `${d.getFullYear()}-${String(week).padStart(2, "0")}`;
+  return `${d.getUTCFullYear()}-${String(week).padStart(2, "0")}`;
 }
 
 function parseWeek(weekStr) {
   const [year, week] = weekStr.split("-").map(Number);
-  const jan1 = new Date(year, 0, 1);
+  const jan1 = new Date(Date.UTC(year, 0, 1));
   const d = new Date(jan1.getTime() + week * 7 * 24 * 60 * 60 * 1000);
   return d;
 }
 
-function computeWeeklyData(db) {
+function computeWeeklyData(db, timezoneOffsetMinutes = 0, now = new Date()) {
   const weeks = [];
+  const localNow = toLocalDate(now, timezoneOffsetMinutes);
+
   for (let i = 11; i >= 0; i--) {
-    const weekStart = new Date(Date.now() - i * 7 * 24 * 60 * 60 * 1000);
-    const weekEnd = new Date(
-      weekStart.getTime() + 7 * 24 * 60 * 60 * 1000
+    const localWeekStart = new Date(
+      Date.UTC(
+        localNow.getUTCFullYear(),
+        localNow.getUTCMonth(),
+        localNow.getUTCDate() - i * 7
+      )
     );
+    const localWeekEnd = new Date(
+      localWeekStart.getTime() + 7 * 24 * 60 * 60 * 1000
+    );
+    const weekStart = fromLocalDate(localWeekStart, timezoneOffsetMinutes);
+    const weekEnd = fromLocalDate(localWeekEnd, timezoneOffsetMinutes);
     const count = db
       .prepare(
         `SELECT COUNT(*) as count FROM sessions
@@ -295,9 +322,10 @@ function computeWeeklyData(db) {
 
     weeks.push({
       week: `W${12 - i}`,
-      label: weekStart.toLocaleDateString("th-TH", {
+      label: localWeekStart.toLocaleDateString("th-TH", {
         month: "short",
         day: "numeric",
+        timeZone: "UTC",
       }),
       count,
     });
@@ -305,7 +333,12 @@ function computeWeeklyData(db) {
   return weeks;
 }
 
-function computePredictedDates(db, activePackage) {
+function computePredictedDates(
+  db,
+  activePackage,
+  timezoneOffsetMinutes = 0,
+  now = new Date()
+) {
   if (!activePackage) return [];
 
   const remaining = activePackage.total_sessions - activePackage.used_sessions;
@@ -315,17 +348,70 @@ function computePredictedDates(db, activePackage) {
   const sessionDays = [2, 4]; // Tuesday, Thursday
 
   const dates = [];
-  let d = new Date();
-  // Start from today — find the next Tue or Thu
-  while (dates.length < remaining && d <= expiresAt) {
-    const dow = d.getDay();
-    if (sessionDays.includes(dow) && d >= new Date(new Date().toDateString())) {
-      dates.push(d.toISOString().split("T")[0]);
+  let d = toLocalDate(now, timezoneOffsetMinutes);
+  d = new Date(
+    Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
+  );
+
+  // Start from today in the user's local timezone — find the next Tue or Thu
+  while (
+    dates.length < remaining &&
+    fromLocalDate(d, timezoneOffsetMinutes) <= expiresAt
+  ) {
+    const dow = d.getUTCDay();
+    if (sessionDays.includes(dow)) {
+      dates.push(formatLocalDateKey(d));
     }
-    d.setDate(d.getDate() + 1);
+    d.setUTCDate(d.getUTCDate() + 1);
   }
 
   return dates;
 }
+
+function parseTimezoneOffsetMinutes(value) {
+  const offset = Number(value);
+  if (!Number.isFinite(offset) || offset < -14 * 60 || offset > 14 * 60) {
+    return 0;
+  }
+  return Math.trunc(offset);
+}
+
+function sqliteTimezoneModifier(timezoneOffsetMinutes) {
+  const localOffsetMinutes = -timezoneOffsetMinutes;
+  const sign = localOffsetMinutes >= 0 ? "+" : "-";
+  return `${sign}${Math.abs(localOffsetMinutes)} minutes`;
+}
+
+function toLocalDate(date, timezoneOffsetMinutes) {
+  return new Date(date.getTime() - timezoneOffsetMinutes * 60 * 1000);
+}
+
+function fromLocalDate(localDate, timezoneOffsetMinutes) {
+  return new Date(localDate.getTime() + timezoneOffsetMinutes * 60 * 1000);
+}
+
+function getLocalMonthStartUtc(date, timezoneOffsetMinutes) {
+  const localDate = toLocalDate(date, timezoneOffsetMinutes);
+  const localMonthStart = new Date(
+    Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), 1)
+  );
+  return fromLocalDate(localMonthStart, timezoneOffsetMinutes);
+}
+
+function formatLocalDateKey(date) {
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(
+    2,
+    "0"
+  )}-${String(date.getUTCDate()).padStart(2, "0")}`;
+}
+
+export {
+  computePredictedDates,
+  computeStreak,
+  computeWeeklyData,
+  getLocalMonthStartUtc,
+  parseTimezoneOffsetMinutes,
+  sqliteTimezoneModifier,
+};
 
 export default router;
