@@ -116,10 +116,14 @@ export default function Dashboard() {
                 เซสชันสุดท้ายโดยประมาณ
               </h2>
               <p className="text-lg font-bold text-[#c8102e]">
-                {new Date(stats.predicted_dates[stats.predicted_dates.length - 1]).toLocaleDateString(
-                  "th-TH",
-                  { weekday: "short", day: "numeric", month: "short", year: "2-digit" }
-                )}
+                {parseLocalDateKey(
+                  stats.predicted_dates[stats.predicted_dates.length - 1]
+                ).toLocaleDateString("th-TH", {
+                  weekday: "short",
+                  day: "numeric",
+                  month: "short",
+                  year: "2-digit",
+                })}
               </p>
               <p className="text-xs text-slate-400 mt-1">
                 อังคาร/พฤหัส • เหลือ {stats.predicted_dates.length} เซสชัน
@@ -251,7 +255,7 @@ function buildCalendarDays(calendarData, predictedDates = []) {
   if (startDay < 0) startDay = 6;
 
   const days = [];
-  const today = now.toISOString().split("T")[0];
+  const today = formatLocalDateKey(now);
 
   // Previous month padding
   const prevMonthLast = new Date(year, month, 0).getDate();
@@ -294,4 +298,16 @@ function buildCalendarDays(calendarData, predictedDates = []) {
   }
 
   return days;
+}
+
+function formatLocalDateKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+    2,
+    "0"
+  )}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function parseLocalDateKey(dateKey) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return new Date(year, month - 1, day);
 }

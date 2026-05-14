@@ -55,5 +55,6 @@ export function updateSession(id, data) {
 
 // Stats
 export function getStats() {
-  return request("/stats");
+  const timezoneOffsetMinutes = new Date().getTimezoneOffset();
+  return request(`/stats?timezone_offset_minutes=${timezoneOffsetMinutes}`);
 }

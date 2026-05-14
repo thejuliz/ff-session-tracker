@@ -4,3 +4,7 @@ data/*.db
 data/*.db-wal
 data/*.db-shm
 .env
+
+backend/data/*.db
+backend/data/*.db-wal
+backend/data/*.db-shm
